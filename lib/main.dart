@@ -32,6 +32,13 @@ Future<void> recieveMessage() async{
     });
 }
 
+/*Future<void> recieveThread() async{
+ Timer? timer;
+  timer = Timer.periodic(const Duration(seconds: 10), (Timer timer) {
+    recieveMessage();
+  });
+}
+*/
 
 void main() {
   connect();
@@ -69,7 +76,6 @@ class _MyHomePageState extends State<MyHomePage>{
   var _controller = TextEditingController();
 
   
-
   void _sendrecieve() {
     setState(() {
       _controller.clear();
@@ -82,8 +88,18 @@ class _MyHomePageState extends State<MyHomePage>{
     });
   }
 
+  void recieveThread() {
+    Timer? timer;
+    timer = Timer.periodic(const Duration(seconds: 10), (Timer timer) {
+      setState((){
+        recieveMessage();
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    recieveThread();
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
