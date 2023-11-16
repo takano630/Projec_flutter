@@ -75,7 +75,8 @@ class _ConnectPageState extends State<ConnectPage>{
           TextField(
                 maxLength: 50,
                 maxLines:1,
-                decoration: InputDecoration (                  
+                decoration: InputDecoration (
+                  hintText: 'IPアドレスを入力してください',                  
                   suffixIcon: IconButton(
                     onPressed: _sendconnect,
                     icon: Icon(Icons.send),
