@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
-
 import 'package:project_flutter/Connect.dart';
 
 Socket? socket;
@@ -11,7 +10,6 @@ List<String> messages = [];
 Future<void> estateSocket(Socket s) async{
   socket = s;
 }
-
 
 Future<void> sendMessage(String message) async {
     socket?.writeln(message);
@@ -34,7 +32,6 @@ class Game extends StatelessWidget {
   final Socket socket;
   const Game({Key? key, required this.socket}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     estateSocket(socket);
@@ -92,23 +89,26 @@ class _GamePageState extends State<GamePage>{
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Column(
-        children: [
-          TextField(
-                maxLength: 50,
-                maxLines:1,
-                controller: _controller,
-                decoration: InputDecoration (                  
-                  suffixIcon: IconButton(
-                    onPressed: _sendrecieve,
-                    icon: Icon(Icons.send),
+      body:SingleChildScrollView( 
+        child:Column(
+          children: [
+            TextField(
+                  maxLength: 50,
+                  maxLines:1,
+                  controller: _controller,
+                  decoration: InputDecoration (                  
+                    suffixIcon: IconButton(
+                      onPressed: _sendrecieve,
+                      icon: Icon(Icons.send),
+                    ),
                   ),
+                  onChanged: (String txt)=> sendtext = txt,
                 ),
-                onChanged: (String txt)=> sendtext = txt,
-              ),
-          ...messages.map((element) => ListTile(title: Text(element))),
-        ],
+            ...messages.map((element) => ListTile(title: Text(element))),
+          ],
+        ),
       ),
     );
   }
 }
+
