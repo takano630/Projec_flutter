@@ -1,30 +1,54 @@
 import 'package:flutter/material.dart';
+import './size_config.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
-import 'package:project_flutter/Connect.dart';
 
 Socket? socket;
 List<String> messages = [];
+List<String> player=[];
+bool game_start = false;
+
+
 
 Future<void> estateSocket(Socket s) async{
   socket = s;
 }
 
 Future<void> sendMessage(String message) async {
-    socket?.writeln(message);
+    socket?.writeln(message.trim());
     print("send");
     await Future.delayed(Duration(milliseconds: 10));
-    messages.add("you:" + message);
 }
 
 Future<void> recieveMessage() async{
   String message;
+  List<String> message_split;
+  try{
+
   socket?.listen((List<int> event) {
       print(utf8.decode(event));
       message = utf8.decode(event);
-      messages.add(message);
+      message_split = message.split(' ');
+      for (int i = 0; i < message_split.length-1; i++){
+        if (message_split[i] == "JOIN"){
+          player.add(message_split[i+1].trim());
+          messages.add(message_split[i+1].trim() + "が入室しました");
+          break;
+        }
+      }
+      if (message.contains("ENTER_NAME")){
+        messages.add("名前を入力してください");
+      } else if(message.contains("START")){
+        messages.add("ゲームスタート");
+        game_start = true;
+      } else {
+        messages.add(message);
+      }
     });
+  }catch (e) {
+      throw Exception('error!!');
+  }
 }
 
 
@@ -72,9 +96,10 @@ class _GamePageState extends State<GamePage>{
     });
   }
 
+
   void recieveThread() {
     Timer? timer;
-    timer = Timer.periodic(const Duration(seconds: 10), (Timer timer) {
+    timer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
       setState((){
         recieveMessage();
       });
@@ -84,13 +109,14 @@ class _GamePageState extends State<GamePage>{
   @override
   Widget build(BuildContext context) {
     recieveThread();
+    SizeConfig().init(context);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body:SingleChildScrollView( 
-        child:Column(
+      body:Column(
           children: [
             TextField(
                   maxLength: 50,
@@ -104,11 +130,33 @@ class _GamePageState extends State<GamePage>{
                   ),
                   onChanged: (String txt)=> sendtext = txt,
                 ),
-            ...messages.map((element) => ListTile(title: Text(element))),
+            Container(  
+                height: SizeConfig.blockSizeVertical! * 15,
+                width: SizeConfig.blockSizeHorizontal! * 80,
+                color: Colors.cyan[100],
+                child:Column(children: [
+                  const Text("PlayerList"),
+                  Flexible(child:SingleChildScrollView( 
+                    child:Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,             
+                      children: [
+                      ...player.map((element) => ListTile(title: Text(element))),
+                      ],
+                    )
+                  ))
+                ],) 
+            ),
+            Expanded(child:SingleChildScrollView( 
+              child:Column(
+                children: [
+                  ...messages.map((element) => ListTile(title: Text(element))),
+                ],
+              ),
+            ))
           ],
         ),
-      ),
-    );
+      );
   }
 }
+
 

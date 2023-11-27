@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:project_flutter/Game.dart';
 import 'dart:io';
-import 'dart:convert';
 import 'dart:async';
-
 
 Socket? socket;
 
@@ -54,9 +52,10 @@ class ConnectPage extends StatefulWidget {
 class _ConnectPageState extends State<ConnectPage>{
   String ip = "";
 
-  void _sendconnect(){
+  void _sendconnect() async{
     if (ip!=""){
       connect(ip);
+      await new Future.delayed(new Duration(seconds: 5));
       Navigator.of(context).push(MaterialPageRoute(builder:(context) => Game(socket: returnSocket() as Socket)
       ));
     }
@@ -89,3 +88,4 @@ class _ConnectPageState extends State<ConnectPage>{
     );
   }
 }
+
