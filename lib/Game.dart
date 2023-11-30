@@ -7,12 +7,15 @@ import 'dart:async';
 Socket? socket;
 List<String> messages = [];
 List<String> player=[];
+String your_theme = "";
 bool game_start = false;
+int player_number = 0;
 
 
 
 Future<void> estateSocket(Socket s) async{
   socket = s;
+  messages.add("入室しました。名前を入力してください");
 }
 
 Future<void> sendMessage(String message) async {
@@ -30,20 +33,53 @@ Future<void> recieveMessage() async{
       print(utf8.decode(event));
       message = utf8.decode(event);
       message_split = message.split(' ');
-      for (int i = 0; i < message_split.length-1; i++){
+      bool playerlist = false;
+      for (int i = 0; i < message_split.length; i++){
         if (message_split[i] == "JOIN"){
-          player.add(message_split[i+1].trim());
-          messages.add(message_split[i+1].trim() + "が入室しました");
-          break;
+          if (i < message_split.length-1){
+            player.add(message_split[i+1].trim());
+            messages.add(message_split[i+1].trim() + "が入室しました");
+            player_number += 1;
+            continue;
+          }
         }
-      }
-      if (message.contains("ENTER_NAME")){
-        messages.add("名前を入力してください");
-      } else if(message.contains("START")){
-        messages.add("ゲームスタート");
-        game_start = true;
-      } else {
-        messages.add(message);
+        if (message_split[i] == "REMOVE"){
+          if (i < message_split.length-1){
+            player.remove(message_split[i+1].trim());
+            messages.add(message_split[i+1].trim() + "が退室しました");
+            player_number -= 1;
+            continue;
+          }
+        }
+        if (message_split[i] == "ENTER_NAME"){
+          messages.add("名前を入力してください");
+          continue;
+        }
+        if (message_split[i] == "PLAYER_LIST"){
+          playerlist = true;
+          continue;
+        }
+        if (message_split[i].contains("END")){
+          playerlist = false;
+          continue;
+        } else if (playerlist){
+          player.add(message_split[i].trim());
+          player_number += 1;
+          continue;
+        }
+        if(message_split[i] == "START"){
+          messages.add("ゲームスタート");
+          game_start = true;
+          continue;
+        }
+        if (message_split[i] == "THEME"){
+          if (i < message_split.length-1){
+            your_theme = message_split[i+1].trim();
+            messages.add("あなたのお題は"+message_split[i+1].trim()+"です");
+            continue;
+          }
+        }
+        messages.add(message_split[i]);
       }
     });
   }catch (e) {
@@ -108,6 +144,7 @@ class _GamePageState extends State<GamePage>{
 
   @override
   Widget build(BuildContext context) {
+    final Size size = MediaQuery.of(context).size;
     recieveThread();
     SizeConfig().init(context);
 
@@ -131,16 +168,26 @@ class _GamePageState extends State<GamePage>{
                   onChanged: (String txt)=> sendtext = txt,
                 ),
             Container(  
-                height: SizeConfig.blockSizeVertical! * 15,
+                height: SizeConfig.blockSizeVertical! * 7,
+                width: SizeConfig.blockSizeHorizontal! * 80,
+                color: Colors.pink[200],
+                child:Column(children: [
+                const Text("Your theme"),
+                Text(your_theme),
+                ],)
+            ),
+            Container(  
+                height: SizeConfig.blockSizeVertical! * 13,
                 width: SizeConfig.blockSizeHorizontal! * 80,
                 color: Colors.cyan[100],
                 child:Column(children: [
-                  const Text("PlayerList"),
+                  const Text("PlayerNumber"),
+                  Text(player_number.toString()),
                   Flexible(child:SingleChildScrollView( 
                     child:Column(
                       crossAxisAlignment: CrossAxisAlignment.start,             
                       children: [
-                      ...player.map((element) => ListTile(title: Text(element))),
+                      ...player.map((element) => ListTile(title: Text(element,style: TextStyle(fontSize: size.width / 35)))),
                       ],
                     )
                   ))
