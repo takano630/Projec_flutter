@@ -63,7 +63,7 @@ Future<void> recieveMessage() async{
           playerlist = false;
           continue;
         } else if (playerlist){
-          player.add(message_split[i].trim());
+          player.add((player_number.toString() +" "+ message_split[i].trim()));
           player_number += 1;
           continue;
         }
@@ -76,8 +76,8 @@ Future<void> recieveMessage() async{
           if (i < message_split.length-1){
             your_theme = message_split[i+1].trim();
             messages.add("あなたのお題は"+message_split[i+1].trim()+"です");
-            continue;
           }
+          continue;
         }
         messages.add(message_split[i]);
       }
