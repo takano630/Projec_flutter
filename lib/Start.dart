@@ -44,7 +44,7 @@ class _StartPageState extends State<StartPage>{
         child : Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text("ワードウルフ‼"),
+            Image.asset('images/wordwolftitle.png'),
             ElevatedButton(
               child: const Text('START'),
               style: ElevatedButton.styleFrom(

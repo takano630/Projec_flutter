@@ -13,9 +13,10 @@ int player_number = 0;
 
 
 
-Future<void> estateSocket(Socket s) async{
+Future<void> estateSocket(Socket s, String name) async{
   socket = s;
-  messages.add("入室しました。名前を入力してください");
+  player.add(name + "   (You)");
+  player_number = player.length;
 }
 
 Future<void> sendMessage(String message) async {
@@ -35,25 +36,25 @@ Future<void> recieveMessage() async{
       message_split = message.split(' ');
       bool playerlist = false;
       for (int i = 0; i < message_split.length; i++){
-        if (message_split[i] == "JOIN"){
+        if (message_split[i].contains("VOTE")){
+          messages.add("投票開始です。プレイヤーidを入力してください");
+          break;
+        }
+        if (message_split.contains("JOIN")){
           if (i < message_split.length-1){
-            player.add(message_split[i+1].trim());
+            player.add(message_split[i+1].trim() + "  (id:" + (player_number).toString() +")");
             messages.add(message_split[i+1].trim() + "が入室しました");
-            player_number += 1;
-            continue;
+            player_number  = player.length;
+            break;
           }
         }
         if (message_split[i] == "REMOVE"){
-          if (i < message_split.length-1){
-            player.remove(message_split[i+1].trim());
+          if (i < message_split.length-2){
+            player.remove(message_split[i+1].trim() + "  (id:" + (message_split[i+2]).trim() +")");
             messages.add(message_split[i+1].trim() + "が退室しました");
             player_number -= 1;
-            continue;
+            break;
           }
-        }
-        if (message_split[i] == "ENTER_NAME"){
-          messages.add("名前を入力してください");
-          continue;
         }
         if (message_split[i] == "PLAYER_LIST"){
           playerlist = true;
@@ -63,8 +64,8 @@ Future<void> recieveMessage() async{
           playerlist = false;
           continue;
         } else if (playerlist){
-          player.add((player_number.toString() +" "+ message_split[i].trim()));
-          player_number += 1;
+          player.add(message_split[i].trim() + "  (id:" + (player_number-1).toString() +")");
+          player_number = player.length;
           continue;
         }
         if(message_split[i] == "START"){
@@ -72,14 +73,33 @@ Future<void> recieveMessage() async{
           game_start = true;
           continue;
         }
-        if (message_split[i] == "THEME"){
+        if (message_split[i].contains("THEME")){
           if (i < message_split.length-1){
             your_theme = message_split[i+1].trim();
             messages.add("あなたのお題は"+message_split[i+1].trim()+"です");
           }
-          continue;
+          break;
         }
-        messages.add(message_split[i]);
+        if (message_split[i].contains("SELECTED")){
+          if (i < message_split.length-2){
+            messages.add(message_split[i+1].trim()+"が選ばれました。");
+            if (message_split[i+2].contains("WIN")){
+              messages.add("勝利！！");
+              break;
+            }
+            if (message_split[i+2].contains("LOSE")){
+              messages.add("敗北...");
+              break;
+            }
+          }
+          break;
+        }
+        if (message_split[i].contains(":")){
+          if (i < message_split.length-1){
+            messages.add(message);
+            break;
+          }
+        }
       }
     });
   }catch (e) {
@@ -90,11 +110,12 @@ Future<void> recieveMessage() async{
 
 class Game extends StatelessWidget {
   final Socket socket;
-  const Game({Key? key, required this.socket}) : super(key: key);
+  final String name;
+  const Game({Key? key, required this.socket, required this.name}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    estateSocket(socket);
+    estateSocket(socket, name);
     return MaterialApp(
       title: 'Word Wolf',
       theme: ThemeData(
@@ -118,6 +139,18 @@ class GamePage extends StatefulWidget {
 class _GamePageState extends State<GamePage>{
   String sendtext = "";
   var _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController(                        // NEW
+      initialScrollOffset: 0.0,                                       // NEW
+      keepScrollOffset: true,                                         // NEW
+    );
+
+  void _toEnd() {                                                    
+    _scrollController.animateTo(                                      
+      _scrollController.position.maxScrollExtent,                     
+      duration: const Duration(milliseconds: 500),                    
+      curve: Curves.ease,                                             
+    );                                                                
+  }
 
   
   void _sendrecieve() {
@@ -194,12 +227,22 @@ class _GamePageState extends State<GamePage>{
                 ],) 
             ),
             Expanded(child:SingleChildScrollView( 
+              controller: _scrollController,
               child:Column(
                 children: [
                   ...messages.map((element) => ListTile(title: Text(element))),
                 ],
               ),
-            ))
+            )),
+            Container(
+              height: SizeConfig.blockSizeVertical! * 8,
+              width: SizeConfig.blockSizeHorizontal! * 80,
+              color: Colors.grey[100],
+              child:IconButton(
+                onPressed: _toEnd,
+                icon: Icon(Icons.arrow_downward),
+              )
+            ),
           ],
         ),
       );
