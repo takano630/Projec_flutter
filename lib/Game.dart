@@ -1,40 +1,126 @@
 import 'package:flutter/material.dart';
+import './size_config.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
-import 'package:project_flutter/Connect.dart';
 
 Socket? socket;
 List<String> messages = [];
+List<String> player=[];
+String your_theme = "";
+bool game_start = false;
+int player_number = 0;
 
-Future<void> estateSocket(Socket s) async{
+
+
+Future<void> estateSocket(Socket s, String name) async{
   socket = s;
+  player.add(name + "   (You)");
+  player_number = player.length;
 }
 
 Future<void> sendMessage(String message) async {
-    socket?.writeln(message);
+    socket?.writeln(message.trim());
     print("send");
     await Future.delayed(Duration(milliseconds: 10));
-    messages.add("you:" + message);
 }
 
 Future<void> recieveMessage() async{
   String message;
+  List<String> message_split;
+  try{
+
   socket?.listen((List<int> event) {
       print(utf8.decode(event));
       message = utf8.decode(event);
-      messages.add(message);
+      message_split = message.split(' ');
+      bool playerlist = false;
+      for (int i = 0; i < message_split.length; i++){
+        if (message_split[i].contains("VOTE")){
+          messages.add("投票開始です。プレイヤーidを入力してください");
+          break;
+        }
+        if (message_split.contains("JOIN")){
+          if (i < message_split.length-1){
+            player.add(message_split[i+1].trim() + "  (id:" + (player_number).toString() +")");
+            messages.add(message_split[i+1].trim() + "が入室しました");
+            player_number  = player.length;
+            break;
+          }
+        }
+        if (message_split[i] == "REMOVE"){
+          if (i < message_split.length-2){
+            player.remove(message_split[i+1].trim() + "  (id:" + (message_split[i+2]).trim() +")");
+            messages.add(message_split[i+1].trim() + "が退室しました");
+            player_number -= 1;
+            break;
+          }
+        }
+        if (message_split[i] == "PLAYER_LIST"){
+          playerlist = true;
+          continue;
+        }
+        if (message_split[i].contains("END")){
+          playerlist = false;
+          continue;
+        } else if (playerlist){
+          player.add(message_split[i].trim() + "  (id:" + (player_number-1).toString() +")");
+          player_number = player.length;
+          continue;
+        }
+        if(message_split[i] == "START"){
+          messages.add("ゲームスタート");
+          game_start = true;
+          continue;
+        }
+        if(message_split[i].contains("RESTART")){
+          messages.add("同数であったため再び話し合いの時間です");
+          game_start = true;
+          break;
+        }
+        if (message_split[i].contains("THEME")){
+          if (i < message_split.length-1){
+            your_theme = message_split[i+1].trim();
+            messages.add("あなたのお題は"+message_split[i+1].trim()+"です。話し合いを始めてください");
+          }
+          break;
+        }
+        if (message_split[i].contains("SELECTED")){
+          if (i < message_split.length-2){
+            messages.add(message_split[i+1].trim()+"が選ばれました。");
+            if (message_split[i+2].contains("WIN")){
+              messages.add("勝利！！");
+              break;
+            }
+            if (message_split[i+2].contains("LOSE")){
+              messages.add("敗北...");
+              break;
+            }
+          }
+          break;
+        }
+        if (message_split[i].contains(":")){
+          if (i < message_split.length-1){
+            messages.add(message);
+            break;
+          }
+        }
+      }
     });
+  }catch (e) {
+      throw Exception('error!!');
+  }
 }
 
 
 class Game extends StatelessWidget {
   final Socket socket;
-  const Game({Key? key, required this.socket}) : super(key: key);
+  final String name;
+  const Game({Key? key, required this.socket, required this.name}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    estateSocket(socket);
+    estateSocket(socket, name);
     return MaterialApp(
       title: 'Word Wolf',
       theme: ThemeData(
@@ -58,6 +144,18 @@ class GamePage extends StatefulWidget {
 class _GamePageState extends State<GamePage>{
   String sendtext = "";
   var _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController(                        // NEW
+      initialScrollOffset: 0.0,                                       // NEW
+      keepScrollOffset: true,                                         // NEW
+    );
+
+  void _toEnd() {                                                    
+    _scrollController.animateTo(                                      
+      _scrollController.position.maxScrollExtent,                     
+      duration: const Duration(milliseconds: 500),                    
+      curve: Curves.ease,                                             
+    );                                                                
+  }
 
   
   void _sendrecieve() {
@@ -72,9 +170,10 @@ class _GamePageState extends State<GamePage>{
     });
   }
 
+
   void recieveThread() {
     Timer? timer;
-    timer = Timer.periodic(const Duration(seconds: 10), (Timer timer) {
+    timer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
       setState((){
         recieveMessage();
       });
@@ -83,14 +182,16 @@ class _GamePageState extends State<GamePage>{
 
   @override
   Widget build(BuildContext context) {
+    final Size size = MediaQuery.of(context).size;
     recieveThread();
+    SizeConfig().init(context);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body:SingleChildScrollView( 
-        child:Column(
+      body:Column(
           children: [
             TextField(
                   maxLength: 50,
@@ -104,11 +205,53 @@ class _GamePageState extends State<GamePage>{
                   ),
                   onChanged: (String txt)=> sendtext = txt,
                 ),
-            ...messages.map((element) => ListTile(title: Text(element))),
+            Container(  
+                height: SizeConfig.blockSizeVertical! * 7,
+                width: SizeConfig.blockSizeHorizontal! * 80,
+                color: Colors.pink[200],
+                child:Column(children: [
+                const Text("Your theme"),
+                Text(your_theme),
+                ],)
+            ),
+            Container(  
+                height: SizeConfig.blockSizeVertical! * 13,
+                width: SizeConfig.blockSizeHorizontal! * 80,
+                color: Colors.cyan[100],
+                child:Column(children: [
+                  const Text("PlayerNumber"),
+                  Text(player_number.toString()),
+                  Flexible(child:SingleChildScrollView( 
+                    child:Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,             
+                      children: [
+                      ...player.map((element) => ListTile(title: Text(element,style: TextStyle(fontSize: size.width / 35)))),
+                      ],
+                    )
+                  ))
+                ],) 
+            ),
+            Expanded(child:SingleChildScrollView( 
+              controller: _scrollController,
+              child:Column(
+                children: [
+                  ...messages.map((element) => ListTile(title: Text(element))),
+                ],
+              ),
+            )),
+            Container(
+              height: SizeConfig.blockSizeVertical! * 8,
+              width: SizeConfig.blockSizeHorizontal! * 80,
+              color: Colors.grey[100],
+              child:IconButton(
+                onPressed: _toEnd,
+                icon: Icon(Icons.arrow_downward),
+              )
+            ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
+
 

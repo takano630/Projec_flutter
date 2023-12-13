@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:project_flutter/Game.dart';
 import 'dart:io';
-import 'dart:convert';
 import 'dart:async';
-
 
 Socket? socket;
 
@@ -23,7 +21,6 @@ Socket? returnSocket() {
 Future<void> sendMessage(String message) async {
     socket?.writeln(message);
     print("send");
-    await Future.delayed(Duration(milliseconds: 10));
 }
 
 
@@ -53,11 +50,15 @@ class ConnectPage extends StatefulWidget {
 
 class _ConnectPageState extends State<ConnectPage>{
   String ip = "";
+  String name = "";
 
-  void _sendconnect(){
-    if (ip!=""){
+  void _sendconnect() async{
+    if (ip!="" && name !=""){
       connect(ip);
-      Navigator.of(context).push(MaterialPageRoute(builder:(context) => Game(socket: returnSocket() as Socket)
+      ip = "";
+      await new Future.delayed(new Duration(seconds: 5));
+      sendMessage(name);
+      Navigator.of(context).push(MaterialPageRoute(builder:(context) => Game(socket: returnSocket() as Socket, name: name)
       ));
     }
   }
@@ -84,8 +85,17 @@ class _ConnectPageState extends State<ConnectPage>{
                 ),
                 onChanged: (String txt)=> ip = txt,
               ),
+          TextField(
+                maxLength: 20,
+                maxLines:1,
+                decoration: InputDecoration (
+                  hintText: '名前を入力してください',                  
+                ),
+                onChanged: (String txt)=> name = txt,
+              ),
         ],
       ),
     );
   }
 }
+

@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:project_flutter/Connect.dart';
-import 'dart:io';
-import 'dart:convert';
-import 'dart:async';
+import 'package:project_flutter/Start.dart';
 
 void main() {
   runApp(const MyApp());
@@ -37,7 +34,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Connect());
+    return Scaffold(body: Start());
   }
 }
 
