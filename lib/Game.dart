@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import './size_config.dart';
-import 'dart:io';
+//import 'dart:io';
+import 'package:universal_io/io.dart';
 import 'dart:convert';
 import 'dart:async';
 
