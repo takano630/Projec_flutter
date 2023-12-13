@@ -73,10 +73,15 @@ Future<void> recieveMessage() async{
           game_start = true;
           continue;
         }
+        if(message_split[i].contains("RESTART")){
+          messages.add("同数であったため再び話し合いの時間です");
+          game_start = true;
+          break;
+        }
         if (message_split[i].contains("THEME")){
           if (i < message_split.length-1){
             your_theme = message_split[i+1].trim();
-            messages.add("あなたのお題は"+message_split[i+1].trim()+"です");
+            messages.add("あなたのお題は"+message_split[i+1].trim()+"です。話し合いを始めてください");
           }
           break;
         }
