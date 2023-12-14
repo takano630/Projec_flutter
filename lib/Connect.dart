@@ -1,13 +1,16 @@
+
 import 'package:flutter/material.dart';
 import 'package:project_flutter/Game.dart';
-import 'dart:io';
+//import 'dart:io';
+import 'package:universal_io/io.dart';
 import 'dart:async';
 
 Socket? socket;
 
-Future<void> connect(String ip) async {
+
+Future<void> connect_server(String ip) async {
     try {
-      socket = await Socket.connect(ip, 1234);
+      socket = await Socket.connect(ip, 1234);      
       print("connect");
     } catch (e) {
       throw Exception('connect error!!');
@@ -54,7 +57,7 @@ class _ConnectPageState extends State<ConnectPage>{
 
   void _sendconnect() async{
     if (ip!="" && name !=""){
-      connect(ip);
+      connect_server(ip);
       ip = "";
       await new Future.delayed(new Duration(seconds: 5));
       sendMessage(name);

@@ -5,17 +5,22 @@ import 'package:universal_io/io.dart';
 import 'dart:convert';
 import 'dart:async';
 
+
+
 Socket? socket;
+Stream<List<int>>? stream;
 List<String> messages = [];
 List<String> player=[];
 String your_theme = "";
 bool game_start = false;
 int player_number = 0;
+List<int> already_last = []; 
 
 
 
 Future<void> estateSocket(Socket s, String name) async{
   socket = s;
+  stream = socket?.asBroadcastStream();
   player.add(name + "   (You)");
   player_number = player.length;
 }
@@ -29,9 +34,9 @@ Future<void> sendMessage(String message) async {
 Future<void> recieveMessage() async{
   String message;
   List<String> message_split;
-  try{
-
-  socket?.listen((List<int> event) {
+  stream?.listen((List<int> event) {
+    if(event != already_last){
+      already_last = event;
       print(utf8.decode(event));
       message = utf8.decode(event);
       message_split = message.split(' ');
@@ -86,6 +91,10 @@ Future<void> recieveMessage() async{
           }
           break;
         }
+        if (message_split[i].contains("ALREADY_STARTED")){
+          messages.add("すでにゲームが始まっています。");
+          break;
+        }
         if (message_split[i].contains("SELECTED")){
           if (i < message_split.length-2){
             messages.add(message_split[i+1].trim()+"が選ばれました。");
@@ -107,10 +116,10 @@ Future<void> recieveMessage() async{
           }
         }
       }
+    }
     });
-  }catch (e) {
-      throw Exception('error!!');
-  }
+
+  
 }
 
 
@@ -145,9 +154,9 @@ class GamePage extends StatefulWidget {
 class _GamePageState extends State<GamePage>{
   String sendtext = "";
   var _controller = TextEditingController();
-  final ScrollController _scrollController = ScrollController(                        // NEW
-      initialScrollOffset: 0.0,                                       // NEW
-      keepScrollOffset: true,                                         // NEW
+  final ScrollController _scrollController = ScrollController(                        
+      initialScrollOffset: 0.0,                                       
+      keepScrollOffset: true,                                       
     );
 
   void _toEnd() {                                                    
@@ -172,7 +181,7 @@ class _GamePageState extends State<GamePage>{
   }
 
 
-  void recieveThread() {
+  void recieveThread() async{
     Timer? timer;
     timer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
       setState((){
@@ -222,12 +231,15 @@ class _GamePageState extends State<GamePage>{
                 child:Column(children: [
                   const Text("PlayerNumber"),
                   Text(player_number.toString()),
-                  Flexible(child:SingleChildScrollView( 
+                  Flexible(child: Scrollbar(
+                    controller: _scrollController,
+                    child:SingleChildScrollView( 
                     child:Column(
                       crossAxisAlignment: CrossAxisAlignment.start,             
                       children: [
-                      ...player.map((element) => ListTile(title: Text(element,style: TextStyle(fontSize: size.width / 35)))),
+                      ...player.map((element) => ListTile(title: Text(element))),
                       ],
+                    )
                     )
                   ))
                 ],) 
