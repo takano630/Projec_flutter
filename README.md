@@ -1,16 +1,4 @@
-# project_flutter
+# Project課題（機械学習とソケット通信によるワードウルフの作成）
 
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+機械学習によるワードウルフのお題生成とpcでもスマホでも遊べるようにすることを目的としており、自分はスマホアプリとpcのクライエント側とサーバー側の通信の作成を担当する。
+中間発表を経てAndroid Studioからflutterに変えたためプロジェクトを作り直した。
